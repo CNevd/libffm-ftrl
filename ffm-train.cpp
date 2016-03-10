@@ -218,9 +218,9 @@ int train(Option opt)
     else
     {
         ffm_model *model = ffm_train_with_validation(tr, va, opt.param);
-
+        
         status = ffm_save_model(model, opt.model_path.c_str());
-
+        
         ffm_destroy_model(&model);
     }
 
@@ -260,9 +260,7 @@ int train_on_disk(Option opt)
 
         return 1;
     }
-
     ffm_destroy_model(&model);
-
     return 0;
 }
 

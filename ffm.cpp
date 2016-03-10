@@ -196,7 +196,7 @@ ffm_model* init_model(ffm_int n, ffm_int m, ffm_parameter param)
                 *w = 1;
         }
     }
-    memset(model->Z, 0, sizeof(ffm_float)*n*m*k_aligned); // init Z
+    memset(model->Z, 0, sizeof(ffm_float)*n*m*k_aligned); // init Z for ftrl
 
     return model;
 }
@@ -854,10 +854,10 @@ ffm_parameter ffm_get_default_param()
 {
     ffm_parameter param;
 
-    param.alpha = 0.2;
-    param.beta = 0.1;
-    param.L1 = 0.0;
-    param.L2 = 0.0;
+    param.alpha = 0.1;
+    param.beta = 1.0;
+    param.L1 = 0.1;
+    param.L2 = 0.1;
     param.nr_iters = 15;
     param.k = 4;
     param.nr_threads = 1;
@@ -885,7 +885,9 @@ ffm_model* ffm_train_with_validation(ffm_problem *tr, ffm_problem *va, ffm_param
     model_ret->normalization = model->normalization;
 
     model_ret->W = model->W;
+    model_ret->Z = model->Z;
     model->W = nullptr;
+    model->Z = nullptr;
 
     return model_ret;
 }
