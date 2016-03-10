@@ -854,10 +854,10 @@ ffm_parameter ffm_get_default_param()
 {
     ffm_parameter param;
 
-    param.alpha = 0.1;
-    param.beta = 1.0;
-    param.L1 = 0.1;
-    param.L2 = 0.1;
+    param.alpha = 0.2;
+    param.beta = 0.1;
+    param.L1 = 0.;
+    param.L2 = 0.;
     param.nr_iters = 15;
     param.k = 4;
     param.nr_threads = 1;
@@ -912,7 +912,9 @@ ffm_model* ffm_train_with_validation_on_disk(
     model_ret->normalization = model->normalization;
 
     model_ret->W = model->W;
+    model_ret->Z = model->Z;
     model->W = nullptr;
+    model->Z = nullptr;
 
     return model_ret;
 }
