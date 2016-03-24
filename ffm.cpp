@@ -82,11 +82,13 @@ inline ffm_float wTx(
                 ffm_float *wg1 = w1 + model.k;
                 ffm_float *wg2 = w2 + model.k;
  
-                for(ffm_int d = 0; d < model.k; d += 4)
+                for(ffm_int d = 0; d < model.k; d ++)
                 {
                     // calc grad
                     ffm_float g1 = L2 * (*(w1 + d)) + kappav * (*(w2 + d));
                     ffm_float g2 = L2 * (*(w2 + d)) + kappav * (*(w1 + d));
+                    //ffm_float g1 = kappav * (*(w2 + d));
+                    //ffm_float g2 = kappav * (*(w1 + d));
                     ffm_float sigma1 = (sqrt(*(wg1+d) + g1 * g1) - sqrt(*(wg1+d))) / alpha;
                     ffm_float sigma2 = (sqrt(*(wg2+d) + g2 * g2) - sqrt(*(wg2+d))) / alpha;
                     // update z[i]
