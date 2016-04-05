@@ -46,6 +46,10 @@ inline ffm_float wTx(
     ffm_long align1 = (ffm_long)model.m*align0;
 
     __m128 XMMkappa = _mm_set1_ps(kappa);
+    __m128 XMMalpha = _mm_set1_ps(alpha);
+    __m128 XMMbeta = _mm_set1_ps(beta);
+    __m128 XMML1 = _mm_set1_ps(L1);
+    __m128 XMML2 = _mm_set1_ps(L2);
 
     __m128 XMMt = _mm_setzero_ps(); // all the interaction sum, hypothesis
 
@@ -82,35 +86,84 @@ inline ffm_float wTx(
                 ffm_float *wg1 = w1 + model.k;
                 ffm_float *wg2 = w2 + model.k;
  
-                for(ffm_int d = 0; d < model.k; d ++)
+                for(ffm_int d = 0; d < model.k; d += 4)
                 {
+                    // load
+                    __m128 XMMw1 = _mm_load_ps(w1+d);
+                    __m128 XMMw2 = _mm_load_ps(w2+d);
+
+                    __m128 XMMwg1 = _mm_load_ps(wg1+d);
+                    __m128 XMMwg2 = _mm_load_ps(wg2+d);
+
+                    __m128 XMMz1 = _mm_load_ps(z1+d);
+                    __m128 XMMz2 = _mm_load_ps(z2+d);
+
+
                     // calc grad
-                    ffm_float g1 = L2 * (*(w1 + d)) + kappav * (*(w2 + d));
-                    ffm_float g2 = L2 * (*(w2 + d)) + kappav * (*(w1 + d));
+                    __m128 XMMg1 = _mm_add_ps(
+                                   _mm_mul_ps(XMML2, XMMw1),
+                                   _mm_mul_ps(XMMkappav, XMMw2));
+                    //ffm_float g1 = L2 * (*(w1 + d)) + kappav * (*(w2 + d));
+                    _mm128 XMMg2 = _mm_add_ps(
+                                   _mm_mul_ps(XMML2, XMMw2),
+                                   _mm_mul_ps(XMMkappav, XMMw1));
+                    //ffm_float g2 = L2 * (*(w2 + d)) + kappav * (*(w1 + d));
                     //ffm_float g1 = kappav * (*(w2 + d));
                     //ffm_float g2 = kappav * (*(w1 + d));
-                    ffm_float sigma1 = (sqrt(*(wg1+d) + g1 * g1) - sqrt(*(wg1+d))) / alpha;
-                    ffm_float sigma2 = (sqrt(*(wg2+d) + g2 * g2) - sqrt(*(wg2+d))) / alpha;
-                    // update z[i]
-                    *(z1 + d) += g1 - sigma1 * (*w1);
-                    *(z2 + d) += g2 - sigma2 * (*w2);
-                    // update n[i]
-                    *(wg1+d) += (g1 * g1);
-                    *(wg2+d) += (g2 * g2);
-                    // update w
-                    int sign = (*(z1 + d)) > 0 ? 1:-1;
+                    _mm128 XMMsigma1 =  _mm_div_ps(
+                                        _mm_sub_ps(
+                                        _mm_sqrt_ps(
+                                        _mm_add_ps(XMMwg1,
+                                        _mm_mul_ps(XMMg1, XMMg1))),
+                                        _mm_sqrt_ps(XMMwg1)), XMMalpha);
+                    _mm128 XMMsigma2 = _mm_div_ps(
+                                       _mm_sub_ps(
+                                       _mm_sqrt_ps(
+                                       _mm_add_ps(XMMwg2,
+                                       _mm_mul_ps(XMMg2, XMMg2))),
+                                       _mm_sqrt_ps(XMMwg2)), XMMalpha);
+                                        
+                    //ffm_float sigma1 = (sqrt(*(wg1+d) + g1 * g1) - sqrt(*(wg1+d))) / alpha;
+                    //ffm_float sigma2 = (sqrt(*(wg2+d) + g2 * g2) - sqrt(*(wg2+d))) / alpha;
 
-                    if ( sign * (*(z1 + d)) <= L1) { 
-                      *(w1 + d) = 0; 
-                    }else{
-                      *(w1 + d) = (sign * L1 - (*(z1 + d))) / ((beta + sqrt(*(wg1+d))) / alpha + L2);
-                    }
+                    // update z[i]
+                    XMMz1 = _mm_add_ps(XMMz1,
+                            _mm_sub_ps(XMMg1,
+                            _mm_mul_ps(XMMsigma1, XMMw1)));
+                    XMMz2 = _mm_add_ps(XMMz2,
+                            _mm_sub_ps(XMMg2,
+                            _mm_mul_ps(XMMsigma2, XMMw2)));
+                    //*(z1 + d) += g1 - sigma1 * (*w1);
+                    //*(z2 + d) += g2 - sigma2 * (*w2);
+                    _mm_store_ps(z1+d, XMMz1);
+                    _mm_store_ps(z2+d, XMMz2);
+
+                    // update n[i]
+                    XMMwg1 = _mm_add_ps(
+                             _mm_mul_ps(XMMg1, XMMg1));
+                    XMMwg2 = _mm_add_ps(
+                             _mm_mul_ps(XMMg2, XMMg2));
+                    //*(wg1+d) += (g1 * g1);
+                    //*(wg2+d) += (g2 * g2);
+                    _mm_store_ps(wg1+d, XMMwg1);
+                    _mm_store_ps(wg2+d, XMMwg2);
+
+                    // update w  !!SSE may not be any faster TODO:CNevd
+                    for (int i_ = 0; i_ < 4; ++i_) {
+                        int sign = (*(z1 + d + i_)) > 0 ? 1:-1;
+
+                        if ( sign * (*(z1 + d + i_)) <= L1) { 
+                          *(w1 + d + i_) = 0; 
+                        }else{
+                          *(w1 + d + i_) = (sign * L1 - (*(z1 + d + i_))) / ((beta + sqrt(*(wg1 + d + i_))) / alpha + L2);
+                        }
                      
-                    sign = (*(z2 + d)) > 0 ? 1:-1;
-                    if ( sign * (*(z2 + d)) <= L1) {
-                      *(w2 + d) = 0;
-                    }else{
-                      *(w2 + d) = (sign * L1 - (*(z2 + d))) / ((beta + sqrt(*(wg2+d))) / alpha + L2);
+                        sign = (*(z2 + d + i_)) > 0 ? 1:-1;
+                        if ( sign * (*(z2 + d + i_)) <= L1) {
+                          *(w2 + d + i_) = 0;
+                        }else{
+                          *(w2 + d + i_) = (sign * L1 - (*(z2 + d + i_))) / ((beta + sqrt(*(wg2 + d + i_))) / alpha + L2);
+                        }
                     }
                }
             }
