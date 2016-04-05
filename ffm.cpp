@@ -104,19 +104,19 @@ inline ffm_float wTx(
                                    _mm_mul_ps(XMML2, XMMw1),
                                    _mm_mul_ps(XMMkappav, XMMw2));
                     //ffm_float g1 = L2 * (*(w1 + d)) + kappav * (*(w2 + d));
-                    _mm128 XMMg2 = _mm_add_ps(
+                    __m128 XMMg2 = _mm_add_ps(
                                    _mm_mul_ps(XMML2, XMMw2),
                                    _mm_mul_ps(XMMkappav, XMMw1));
                     //ffm_float g2 = L2 * (*(w2 + d)) + kappav * (*(w1 + d));
                     //ffm_float g1 = kappav * (*(w2 + d));
                     //ffm_float g2 = kappav * (*(w1 + d));
-                    _mm128 XMMsigma1 =  _mm_div_ps(
-                                        _mm_sub_ps(
-                                        _mm_sqrt_ps(
-                                        _mm_add_ps(XMMwg1,
-                                        _mm_mul_ps(XMMg1, XMMg1))),
-                                        _mm_sqrt_ps(XMMwg1)), XMMalpha);
-                    _mm128 XMMsigma2 = _mm_div_ps(
+                    __m128 XMMsigma1 = _mm_div_ps(
+                                       _mm_sub_ps(
+                                       _mm_sqrt_ps(
+                                       _mm_add_ps(XMMwg1,
+                                       _mm_mul_ps(XMMg1, XMMg1))),
+                                       _mm_sqrt_ps(XMMwg1)), XMMalpha);
+                    __m128 XMMsigma2 = _mm_div_ps(
                                        _mm_sub_ps(
                                        _mm_sqrt_ps(
                                        _mm_add_ps(XMMwg2,
@@ -139,9 +139,9 @@ inline ffm_float wTx(
                     _mm_store_ps(z2+d, XMMz2);
 
                     // update n[i]
-                    XMMwg1 = _mm_add_ps(
+                    XMMwg1 = _mm_add_ps(XMMwg1,
                              _mm_mul_ps(XMMg1, XMMg1));
-                    XMMwg2 = _mm_add_ps(
+                    XMMwg2 = _mm_add_ps(XMMwg2,
                              _mm_mul_ps(XMMg2, XMMg2));
                     //*(wg1+d) += (g1 * g1);
                     //*(wg2+d) += (g2 * g2);
