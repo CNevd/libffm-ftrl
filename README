@@ -2,7 +2,11 @@ LIBFFM is a library for field-aware factorization machine. For the formulation i
 
     http://www.csie.ntu.edu.tw/~r01922136/slides/ffm.pdf
 
+NOTE: This project is libffm with FTRL updater(original is SGD), so the usage is little different
 
+It can be 
+[Factorization Machines with Follow-The-Regularized-Leader for CTR prediction in Display Advertising](http://www0.cs.ucl.ac.uk/staff/w.zhang/rtb-papers/fm-ftrl.pdf)
+when we set all fields the same 
 
 Table of Contents
 =================
@@ -164,14 +168,14 @@ Examples
 
 train a model using the default parameters
 
-> ffm-train -l 0.001 -k 16 -t 30 -r 0.05 -s 4 bigdata.tr.txt model
+> ffm-train -L2 0.001 -k 16 -t 30 -alpha 0.05 -s 4 bigdata.tr.txt model
 
 train a model using the following parameters:
 
-    regularization cost = 0.001
+    L2 regularization cost = 0.001
     latent factors = 16
     iterations = 30
-    learning rate = 0.05
+    learning rate alpha = 0.05
     threads = 4
 
 > ffm-train -p bigdata.te.txt bigdata.tr.txt model
@@ -229,8 +233,10 @@ There are four public data structures in LIBFFM.
 
 -   struct ffm_parameter
     {
-        ffm_float eta;
-        ffm_float lambda;
+        ffm_float alpha;
+        ffm_float beta;
+        ffm_float L1;
+        ffm_float L2;
         ffm_int nr_iters;
         ffm_int k;
         ffm_int nr_threads;
@@ -245,8 +251,10 @@ There are four public data structures in LIBFFM.
 
     variable         meaning                             default
     ============================================================
-    eta              learning rate                           0.1
-    lambda           regularization cost                       0
+    alpha            Per-Coordinate Learning Rate            0.3
+    beta             Per-Coordinate Learning Rate            1.0
+    L1               L1 regularization cost                    0
+    L2               L2 regularization cost                    0
     nr_iters         number of iterations                     15
     k                number of latent factors                  4
     nr_threads       number of threads used                    1
@@ -265,6 +273,7 @@ There are four public data structures in LIBFFM.
         ffm_int m;              // number of fields
         ffm_int k;              // number of latent factors
         ffm_float *W;           // store model values
+        ffm_float *Z            // store accumulation of gradient
         bool normalization;     // do instance-wise normalization
     };
 

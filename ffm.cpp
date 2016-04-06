@@ -909,8 +909,8 @@ ffm_parameter ffm_get_default_param()
 {
     ffm_parameter param;
 
-    param.alpha = 0.2;
-    param.beta = 0.1;
+    param.alpha = 0.3;
+    param.beta = 1.0;
     param.L1 = 0.;
     param.L2 = 0.;
     param.nr_iters = 15;
