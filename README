@@ -72,7 +72,10 @@ Command Line Usage
     usage: ffm-train [options] training_set_file [model_file]
 
     options:
-    -l <lambda>: set regularization parameter (default 0.00002)
+    -L1 <L1>: set L1 regularization parameter (default 0.)
+    -L2 <L2>: set L2 regularization parameter (default 0.)
+    -alpha <alpha>: set Per-Coordinate Learning Rate alpha (default 0.3)
+    -beta <beta>: set Per-Coordinate Learning Rate beta (default 1.0)
     -k <factor>: set number of latent factors (default 4)
     -t <iteration>: set number of iterations (default 15)
     -r <eta>: set learning rate (default 0.2)
