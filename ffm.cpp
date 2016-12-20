@@ -45,6 +45,9 @@ inline ffm_float wTx(
     ffm_long align0 = (ffm_long)model.k*2;
     ffm_long align1 = (ffm_long)model.m*align0;
 
+    ffm_long align0_z = (ffm_long)model.k;
+    ffm_long align1_z = (ffm_long)model.m*align0_z;
+
     __m128 XMMkappa = _mm_set1_ps(kappa);
     __m128 XMMalpha = _mm_set1_ps(alpha);
     __m128 XMMbeta = _mm_set1_ps(beta);
@@ -72,8 +75,8 @@ inline ffm_float wTx(
             // if two nodes are 1:121:0.3   2:196:0.2
             ffm_float *w1 = model.W + j1*align1 + f2*align0; // w121,2
             ffm_float *w2 = model.W + j2*align1 + f1*align0; //w196,1
-            ffm_float *z1 = model.Z + j1*align1 + f2*align0;
-            ffm_float *z2 = model.Z + j2*align1 + f1*align0;
+            ffm_float *z1 = model.Z + j1*align1_z + f2*align0_z;
+            ffm_float *z2 = model.Z + j2*align1_z + f1*align0_z;
 
             __m128 XMMv = _mm_set1_ps(v1*v2*r);  // 0.3*0.2
 
@@ -351,7 +354,7 @@ shared_ptr<ffm_model> train(
 #if defined USEOMP
 #pragma omp parallel for schedule(static) reduction(+: tr_loss)
 #endif
-        for(ffm_int ii = 0; ii < tr->l; ii++) // each instance
+        for(ffm_int ii = 0; ii < (ffm_int)order.size(); ii++) // each instance
         {
             ffm_int i = order[ii];
 
