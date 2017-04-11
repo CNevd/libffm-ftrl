@@ -865,6 +865,7 @@ ffm_model* ffm_load_model(char const *path)
 
     ffm_model *model = new ffm_model;
     model->W = nullptr;
+    model->Z = nullptr;
 
     f_in >> dummy >> model->n >> dummy >> model->m >> dummy >> model->k 
          >> dummy >> model->normalization;
