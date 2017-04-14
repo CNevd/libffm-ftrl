@@ -241,7 +241,7 @@ ffm_model* init_model(ffm_int n, ffm_int m, ffm_parameter param)
     {
         for(ffm_int f = 0; f < model->m; f++)
         {
-            for(ffm_int d = 0; d < param.k; d++, w++, z++) {
+            for(ffm_int d = 0; d < param.k; d++, w++) {
                 *w = coef*distribution(generator);
             }
             for(ffm_int d = param.k; d < k_aligned; d++, w++)
@@ -917,8 +917,8 @@ ffm_parameter ffm_get_default_param()
 
     param.alpha = 0.3;
     param.beta = 1.0;
-    param.L1 = 0.0;
-    param.L2 = 0.0;
+    param.L1 = 0.;
+    param.L2 = 0.;
     param.nr_iters = 15;
     param.k = 4;
     param.nr_threads = 1;
