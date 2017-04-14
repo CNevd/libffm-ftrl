@@ -50,9 +50,6 @@ inline ffm_float wTx(
 
     __m128 XMMkappa = _mm_set1_ps(kappa);
     __m128 XMMalpha = _mm_set1_ps(alpha);
-    //__m128 XMMbeta = _mm_set1_ps(beta);
-    //__m128 XMML1 = _mm_set1_ps(L1);
-    //__m128 XMML2 = _mm_set1_ps(L2);
 
     __m128 XMMt = _mm_setzero_ps(); // all the interaction sum, hypothesis
 
@@ -103,14 +100,8 @@ inline ffm_float wTx(
 
 
                     // calc grad
-                    //__m128 XMMg1 = _mm_add_ps(
-                    //               _mm_mul_ps(XMML2, XMMw1),
-                    //               _mm_mul_ps(XMMkappav, XMMw2));
                     __m128 XMMg1 = _mm_mul_ps(XMMkappav, XMMw2);
                     //ffm_float g1 = L2 * (*(w1 + d)) + kappav * (*(w2 + d));
-                    //__m128 XMMg2 = _mm_add_ps(
-                    //               _mm_mul_ps(XMML2, XMMw2),
-                    //               _mm_mul_ps(XMMkappav, XMMw1));
                     __m128 XMMg2 = _mm_mul_ps(XMMkappav, XMMw1);
                     //ffm_float g2 = L2 * (*(w2 + d)) + kappav * (*(w1 + d));
                     //ffm_float g1 = kappav * (*(w2 + d));
@@ -128,19 +119,6 @@ inline ffm_float wTx(
                                        _mm_sqrt_ps(_mm_add_ps(XMMwg2,_mm_mul_ps(XMMg2, XMMg2))),
                                        _mm_sqrt_ps(XMMwg2)), XMMalpha));
                     
-                    /*__m128 XMMsigma1 = _mm_div_ps(
-                                       _mm_sub_ps(
-                                       _mm_sqrt_ps(
-                                       _mm_add_ps(XMMwg1,
-                                       _mm_mul_ps(XMMg1, XMMg1))),
-                                       _mm_sqrt_ps(XMMwg1)), XMMalpha);
-                    __m128 XMMsigma2 = _mm_div_ps(
-                                       _mm_sub_ps(
-                                       _mm_sqrt_ps(
-                                       _mm_add_ps(XMMwg2,
-                                       _mm_mul_ps(XMMg2, XMMg2))),
-                                       _mm_sqrt_ps(XMMwg2)), XMMalpha);
-                    */                    
                     //ffm_float sigma1 = (sqrt(*(wg1+d) + g1 * g1) - sqrt(*(wg1+d))) / alpha;
                     //ffm_float sigma2 = (sqrt(*(wg2+d) + g2 * g2) - sqrt(*(wg2+d))) / alpha;
 
@@ -255,7 +233,6 @@ ffm_model* init_model(ffm_int n, ffm_int m, ffm_parameter param)
 
     ffm_float coef = 1.0f/sqrt(param.k);
     ffm_float *w = model->W;
-    ffm_float *z = model->Z;
 
     default_random_engine generator;
     uniform_real_distribution<ffm_float> distribution(0.0, 1.0);
@@ -266,7 +243,6 @@ ffm_model* init_model(ffm_int n, ffm_int m, ffm_parameter param)
         {
             for(ffm_int d = 0; d < param.k; d++, w++, z++) {
                 *w = coef*distribution(generator);
-                *z = 0;
             }
             for(ffm_int d = param.k; d < k_aligned; d++, w++)
                 *w = 0;
@@ -274,7 +250,7 @@ ffm_model* init_model(ffm_int n, ffm_int m, ffm_parameter param)
                 *w = 0.0000001;
         }
     }
-    //memset(model->Z, 0, sizeof(ffm_float)*n*m*k_aligned); // init Z for ftrl
+    memset(model->Z, 0, sizeof(ffm_float)*n*m*k_aligned); // init Z for ftrl
 
     return model;
 }
@@ -939,10 +915,10 @@ ffm_parameter ffm_get_default_param()
 {
     ffm_parameter param;
 
-    param.alpha = 0.5;
+    param.alpha = 0.3;
     param.beta = 1.0;
-    param.L1 = 0.0001;
-    param.L2 = 0.01;
+    param.L1 = 0.0;
+    param.L2 = 0.0;
     param.nr_iters = 15;
     param.k = 4;
     param.nr_threads = 1;
