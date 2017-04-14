@@ -97,7 +97,7 @@ Option parse_option(int argc, char **argv)
             if(i == argc-1)
                 throw invalid_argument("need to specify beta after -beta");
             i++;
-            opt.param.alpha = atof(args[i].c_str());
+            opt.param.beta = atof(args[i].c_str());
         }
         else if(args[i].compare("-L1") == 0)
         {
@@ -113,8 +113,8 @@ Option parse_option(int argc, char **argv)
             if(i == argc-1)
                 throw invalid_argument("need to specify L2 after -L2");
             i++;
-            opt.param.L1 = atof(args[i].c_str());
-            if(opt.param.L1 < 0)
+            opt.param.L2 = atof(args[i].c_str());
+            if(opt.param.L2 < 0)
                 throw invalid_argument("regularization cost should not be smaller than zero");
         }
         else if(args[i].compare("-s") == 0)
