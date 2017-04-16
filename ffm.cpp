@@ -50,9 +50,6 @@ inline ffm_float wTx(
 
     __m128 XMMkappa = _mm_set1_ps(kappa);
     __m128 XMMalpha = _mm_set1_ps(alpha);
-    __m128 XMMbeta = _mm_set1_ps(beta);
-    __m128 XMML1 = _mm_set1_ps(L1);
-    __m128 XMML2 = _mm_set1_ps(L2);
 
     __m128 XMMt = _mm_setzero_ps(); // all the interaction sum, hypothesis
 
@@ -103,29 +100,25 @@ inline ffm_float wTx(
 
 
                     // calc grad
-                    __m128 XMMg1 = _mm_add_ps(
-                                   _mm_mul_ps(XMML2, XMMw1),
-                                   _mm_mul_ps(XMMkappav, XMMw2));
+                    __m128 XMMg1 = _mm_mul_ps(XMMkappav, XMMw2);
                     //ffm_float g1 = L2 * (*(w1 + d)) + kappav * (*(w2 + d));
-                    __m128 XMMg2 = _mm_add_ps(
-                                   _mm_mul_ps(XMML2, XMMw2),
-                                   _mm_mul_ps(XMMkappav, XMMw1));
+                    __m128 XMMg2 = _mm_mul_ps(XMMkappav, XMMw1);
                     //ffm_float g2 = L2 * (*(w2 + d)) + kappav * (*(w1 + d));
                     //ffm_float g1 = kappav * (*(w2 + d));
                     //ffm_float g2 = kappav * (*(w1 + d));
                     __m128 XMMsigma1 = _mm_div_ps(
-                                       _mm_sub_ps(
-                                       _mm_sqrt_ps(
-                                       _mm_add_ps(XMMwg1,
-                                       _mm_mul_ps(XMMg1, XMMg1))),
-                                       _mm_sqrt_ps(XMMwg1)), XMMalpha);
+                                       _mm_mul_ps(XMMg1,XMMg1),
+                                       _mm_mul_ps(
+                                       _mm_add_ps(
+                                       _mm_sqrt_ps(_mm_add_ps(XMMwg1,_mm_mul_ps(XMMg1, XMMg1))),
+                                       _mm_sqrt_ps(XMMwg1)), XMMalpha));
                     __m128 XMMsigma2 = _mm_div_ps(
-                                       _mm_sub_ps(
-                                       _mm_sqrt_ps(
-                                       _mm_add_ps(XMMwg2,
-                                       _mm_mul_ps(XMMg2, XMMg2))),
-                                       _mm_sqrt_ps(XMMwg2)), XMMalpha);
-                                        
+                                       _mm_mul_ps(XMMg2,XMMg2),
+                                       _mm_mul_ps(
+                                       _mm_add_ps(
+                                       _mm_sqrt_ps(_mm_add_ps(XMMwg2,_mm_mul_ps(XMMg2, XMMg2))),
+                                       _mm_sqrt_ps(XMMwg2)), XMMalpha));
+                    
                     //ffm_float sigma1 = (sqrt(*(wg1+d) + g1 * g1) - sqrt(*(wg1+d))) / alpha;
                     //ffm_float sigma2 = (sqrt(*(wg2+d) + g2 * g2) - sqrt(*(wg2+d))) / alpha;
 
@@ -136,16 +129,18 @@ inline ffm_float wTx(
                     XMMz2 = _mm_add_ps(XMMz2,
                             _mm_sub_ps(XMMg2,
                             _mm_mul_ps(XMMsigma2, XMMw2)));
-                    //*(z1 + d) += g1 - sigma1 * (*w1);
-                    //*(z2 + d) += g2 - sigma2 * (*w2);
-                    _mm_store_ps(z1+d, XMMz1);
-                    _mm_store_ps(z2+d, XMMz2);
 
                     // update n[i]
                     XMMwg1 = _mm_add_ps(XMMwg1,
                              _mm_mul_ps(XMMg1, XMMg1));
                     XMMwg2 = _mm_add_ps(XMMwg2,
                              _mm_mul_ps(XMMg2, XMMg2));
+
+                    //*(z1 + d) += g1 - sigma1 * (*w1);
+                    //*(z2 + d) += g2 - sigma2 * (*w2);
+                    _mm_store_ps(z1+d, XMMz1);
+                    _mm_store_ps(z2+d, XMMz2);
+
                     //*(wg1+d) += (g1 * g1);
                     //*(wg2+d) += (g2 * g2);
                     _mm_store_ps(wg1+d, XMMwg1);
@@ -153,17 +148,17 @@ inline ffm_float wTx(
 
                     // update w  !!SSE may not be any faster TODO:CNevd
                     for (int i_ = 0; i_ < 4; ++i_) {
-                        int sign = (*(z1 + d + i_)) > 0 ? 1:-1;
+                        ffm_float sign = (*(z1 + d + i_)) > 0.0 ? 1.0:-1.0;
 
                         if ( sign * (*(z1 + d + i_)) <= L1) { 
-                          *(w1 + d + i_) = 0; 
+                          *(w1 + d + i_) = 0.0; 
                         }else{
                           *(w1 + d + i_) = (sign * L1 - (*(z1 + d + i_))) / ((beta + sqrt(*(wg1 + d + i_))) / alpha + L2);
                         }
                      
-                        sign = (*(z2 + d + i_)) > 0 ? 1:-1;
+                        sign = (*(z2 + d + i_)) > 0.0 ? 1.0:-1.0;
                         if ( sign * (*(z2 + d + i_)) <= L1) {
-                          *(w2 + d + i_) = 0;
+                          *(w2 + d + i_) = 0.0;
                         }else{
                           *(w2 + d + i_) = (sign * L1 - (*(z2 + d + i_))) / ((beta + sqrt(*(wg2 + d + i_))) / alpha + L2);
                         }
@@ -246,12 +241,13 @@ ffm_model* init_model(ffm_int n, ffm_int m, ffm_parameter param)
     {
         for(ffm_int f = 0; f < model->m; f++)
         {
-            for(ffm_int d = 0; d < param.k; d++, w++)
+            for(ffm_int d = 0; d < param.k; d++, w++) {
                 *w = coef*distribution(generator);
+            }
             for(ffm_int d = param.k; d < k_aligned; d++, w++)
                 *w = 0;
             for(ffm_int d = k_aligned; d < 2*k_aligned; d++, w++)
-                *w = 1;
+                *w = 0.0000001;
         }
     }
     memset(model->Z, 0, sizeof(ffm_float)*n*m*k_aligned); // init Z for ftrl
@@ -831,8 +827,10 @@ void ffm_destroy_problem(ffm_problem **prob)
 
 ffm_int ffm_save_model(ffm_model *model, char const *path)
 {
+    string Zpath = string(path) + "_Z";
+    ofstream f_out_Z(Zpath.c_str());
     ofstream f_out(path);
-    if(!f_out.is_open())
+    if(!f_out.is_open() || !f_out_Z.is_open())
         return 1;
 
     f_out << "n " << model->n << "\n";
@@ -841,14 +839,19 @@ ffm_int ffm_save_model(ffm_model *model, char const *path)
     f_out << "normalization " << model->normalization << "\n";
 
     ffm_float *ptr = model->W;
+    ffm_float *ptr_Z = model->Z;
     for(ffm_int j = 0; j < model->n; j++)
     {
         for(ffm_int f = 0; f < model->m; f++)
         {
             f_out << "w" << j << "," << f << " ";
-            for(ffm_int d = 0; d < model->k; d++, ptr++)
+            f_out_Z << "z" << j << "," << f << " ";
+            for(ffm_int d = 0; d < model->k; d++, ptr++, ptr_Z++) {
                 f_out << *ptr << " ";
+                f_out_Z << *ptr_Z << " ";
+            }
             f_out << "\n";
+            f_out_Z << "\n";
         }
     }
 
@@ -900,10 +903,10 @@ void ffm_destroy_model(ffm_model **model)
         return;
 #ifdef _WIN32
     _aligned_free((*model)->W);
-    _aligned_free((*model)->Z);
+    if (!(*model)->Z) _aligned_free((*model)->Z);
 #else
     free((*model)->W);
-    free((*model)->Z);
+    if (!(*model)->Z) free((*model)->Z);
 #endif
     delete *model;
     *model = nullptr;

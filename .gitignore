@@ -1,0 +1,14 @@
+# Byte-compiled / optimized / DLL files
+*.o
+
+# C extensions
+*.so
+
+# Distribution / packaging
+
+# models
+bigdata.tr.txt.model
+
+# program
+ffm-train
+ffm-predict
